@@ -175,6 +175,67 @@ body {
   margin-right: auto;
 }
 
+/* ========== 亮牌区域 ========== */
+.reveal-area {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.reveal-card-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0,0,0,0.35);
+  padding: 8px 18px;
+  border-radius: 14px;
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,215,0,0.25);
+}
+.reveal-card-area .card {
+  width: 40px;
+  height: 56px;
+  font-size: 0.72rem;
+  box-shadow: 1px 2px 5px rgba(0,0,0,0.3);
+}
+.reveal-card-area .card .card-rank { font-size: 0.8rem; }
+.reveal-card-area .card .card-suit { font-size: 0.65rem; }
+.reveal-card-area .card .joker-text { font-size: 0.45rem; }
+.reveal-label {
+  font-size: 0.72rem;
+  opacity: 0.6;
+  font-weight: 600;
+}
+.reveal-wild-text {
+  font-size: 0.78rem;
+  color: #ffd700;
+  font-weight: 600;
+}
+
+/* ========== 野生牌标记 ========== */
+.card.wild-card {
+  border-color: #ffd700 !important;
+  box-shadow: 0 0 8px rgba(255,215,0,0.5), 2px 3px 8px rgba(0,0,0,0.35) !important;
+}
+.wild-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #ffd700;
+  color: #1a5c2a;
+  font-size: 0.52rem;
+  font-weight: 800;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
 /* ========== 游戏桌 ========== */
 .game-table {
   position: relative;

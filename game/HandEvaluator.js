@@ -92,15 +92,19 @@ function evaluateThree(cards) {
   return { type: HAND_TYPES.NORMAL, high: 0, points: pts };
 }
 
+function isWildCard(c) {
+  return c.isJoker || c.isWild;
+}
+
 function nonJokers(cards) {
-  return cards.filter(c => !c.isJoker);
+  return cards.filter(c => !isWildCard(c));
 }
 
 const ALL_RANKS_FOR_WILD = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 const ALL_SUITS = ['hearts', 'diamonds', 'clubs', 'spades'];
 
 function bestWithJokers(cards) {
-  const jokers = cards.filter(c => c.isJoker);
+  const jokers = cards.filter(c => isWildCard(c));
   const normals = nonJokers(cards);
 
   if (jokers.length === 2) {
@@ -132,9 +136,9 @@ function bestWithJokers(cards) {
 }
 
 function evaluate(cards) {
-  const jokerCount = cards.filter(c => c.isJoker).length;
+  const jokerCount = cards.filter(c => isWildCard(c)).length;
 
-  // 双鬼（2张或3张都可能）
+  // 双鬼（2张或3张都可能）— 包括两张野生牌
   if (cards.length >= 2 && jokerCount >= 2) {
     return { type: HAND_TYPES.DOUBLE_JOKER, high: 99, points: 0 };
   }
@@ -142,8 +146,8 @@ function evaluate(cards) {
   // 2张牌
   if (cards.length === 2) {
     if (jokerCount > 0) {
-      // 单鬼 + 1张普通牌 → 同花2张（百搭同花色）
-      const normal = cards.find(c => !c.isJoker);
+      // 单鬼/野生 + 1张普通牌 → 同花2张（百搭同花色）
+      const normal = cards.find(c => !isWildCard(c));
       return { type: HAND_TYPES.SUIT_PAIR, high: rankOrder(normal.rank), points: normal.value % 10 };
     }
     // 两张普通牌

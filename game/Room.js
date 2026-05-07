@@ -1,4 +1,4 @@
-const { createDeck, shuffle, hasJoker } = require('./Card');
+const { createDeck, shuffle, hasJokerOrWild, markWildCards, SUIT_SYMBOLS } = require('./Card');
 const { evaluate, compare, HAND_NAMES, MULTIPLIERS, HAND_TYPES } = require('./HandEvaluator');
 const { aiDecide } = require('./AIPlayer');
 
@@ -32,9 +32,11 @@ class Room {
     this.scores = {};
     this.roundNumber = 0;
     this.STAKE = 1;
-    // 操作顺序：非庄家按座位顺序，庄家最后
     this.turnOrder = [];
     this.turnCursor = 0;
+    this.revealCard = null;   // 亮出的牌
+    this.wildRank = '';       // 野生牌的点数
+    this.wildDisplay = '';    // 显示文本
   }
 
   addPlayer(id, name, isAI = false) {
@@ -91,6 +93,21 @@ class Room {
 
     this.players[this.dealerIndex].isDealer = true;
 
+    // 亮一张牌作为本局鬼牌指示
+    this.revealCard = this.deck.pop();
+    if (this.revealCard.isJoker) {
+      this.wildRank = 'A';
+      this.wildDisplay = '鬼牌 → 四张A为鬼';
+    } else {
+      this.wildRank = this.revealCard.rank;
+      const otherSuits = ['hearts', 'diamonds', 'clubs', 'spades']
+        .filter(s => s !== this.revealCard.suit)
+        .map(s => SUIT_SYMBOLS[s]);
+      this.wildDisplay = `${this.revealCard.display} → ${otherSuits.join('')}${this.revealCard.rank}为鬼`;
+    }
+    // 标记野生牌
+    markWildCards(this.deck, this.revealCard);
+
     // 发2张底牌
     for (let i = 0; i < 2; i++) {
       for (const player of this.players) {
@@ -119,9 +136,9 @@ class Room {
   }
 
   _mustHit(cards) {
-    const jokers = cards.filter(c => c.isJoker);
-    if (jokers.length >= 2) return false;
-    if (jokers.length === 1) return true;
+    const wilds = cards.filter(c => c.isJoker || c.isWild);
+    if (wilds.length >= 2) return false; // 双鬼/双野生可以不补
+    if (wilds.length === 1) return true;  // 单张鬼/野生强制补牌
     return false;
   }
 
@@ -264,7 +281,10 @@ class Room {
       roundResults: this.roundResults,
       dealerIndex: this.dealerIndex,
       isYourTurn: this.currentPlayerIndex >= 0 && this.players[this.currentPlayerIndex].id === playerId,
-      scores: { ...this.scores }
+      scores: { ...this.scores },
+      revealCard: this.revealCard ? { ...this.revealCard } : null,
+      wildRank: this.wildRank,
+      wildDisplay: this.wildDisplay
     };
   }
 }

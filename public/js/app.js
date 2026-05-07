@@ -77,6 +77,9 @@
     // 阶段提示
     updatePhaseBanner(state);
 
+    // 亮牌 + 野生标记
+    renderRevealCard(state);
+
     // 记分牌
     renderScores(state);
 
@@ -116,6 +119,31 @@
     } else {
       banner.classList.add('hidden');
     }
+  }
+
+  function renderRevealCard(state) {
+    const container = $('revealArea');
+    if (!container) return;
+    if (!state.revealCard) {
+      container.innerHTML = '';
+      return;
+    }
+    const rc = state.revealCard;
+    const cardHtml = rc.isJoker
+      ? `<div class="card face-up ${rc.rank === 'big' ? 'joker-big' : 'joker-small'}"><div class="joker-text">${rc.rank === 'big' ? '大王' : '小王'}</div></div>`
+      : (() => {
+          const isRed = rc.suit === 'hearts' || rc.suit === 'diamonds';
+          const sym = { hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' }[rc.suit];
+          return `<div class="card face-up ${isRed ? 'red' : 'black'}"><div class="card-rank">${rc.rank}</div><div class="card-suit">${sym}</div></div>`;
+        })();
+
+    container.innerHTML = `
+      <div class="reveal-card-area">
+        <div class="reveal-label">亮牌</div>
+        ${cardHtml}
+        <div class="reveal-wild-text">${esc(state.wildDisplay)}</div>
+      </div>
+    `;
   }
 
   function renderScores(state) {
@@ -200,6 +228,14 @@
       el.classList.add(isRed ? 'red' : 'black');
       const suitSymbol = { hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' }[card.suit];
       el.innerHTML = `<div class="card-rank">${card.rank}</div><div class="card-suit">${suitSymbol}</div>`;
+    }
+    // 野生牌标记
+    if (card.isWild) {
+      el.classList.add('wild-card');
+      const badge = document.createElement('div');
+      badge.className = 'wild-badge';
+      badge.textContent = '鬼';
+      el.appendChild(badge);
     }
     return el;
   }
