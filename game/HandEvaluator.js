@@ -1,40 +1,63 @@
+// 全新牌型等级（从大到小）
 const HAND_TYPES = {
-  DOUBLE_JOKER: 10,
-  ZERO_POINTS: 9,
-  STRAIGHT_FLUSH: 8,
-  THREE_KIND: 7,
-  MIXED_STRAIGHT: 6,
-  SUIT_THREE: 5,
-  SUIT_TIANGONG: 4,
-  TIANGONG: 3,
-  SUIT_PAIR: 2,
-  NORMAL: 0
+  DOUBLE_JOKER: 13,
+  TIANGONG_9: 12,       // 2张9点（含同花天公9）
+  TIANGONG_8: 11,       // 2张8点（含同花天公8）
+  THREE_KIND: 10,       // 豹子
+  STRAIGHT_FLUSH: 9,    // 同花顺
+  SUIT_THREE: 8,        // 同花3张
+  MIXED_STRAIGHT: 7,    // 杂顺子
+  POINTS_9: 6,          // 3张9点
+  POINTS_8: 5,          // 3张8点
+  POINTS_7: 4,
+  POINTS_6: 3,
+  POINTS_5: 2,
+  POINTS_4: 1,
+  POINTS_3: 0,
+  POINTS_2: -1,
+  POINTS_1: -2,
+  SUIT_PAIR: -3,        // 同花2张（非天公）
+  NORMAL_2: -4,         // 普通2张（非天公非同花）
+  ZERO_POINTS: -5       // 零点（最小，但吃双鬼）
 };
 
 const HAND_NAMES = {
-  10: '双鬼至尊',
-  9: '零点',
-  8: '同花顺',
-  7: '豹子',
-  6: '杂顺子',
-  5: '同花3张',
-  4: '同花天公',
-  3: '天公',
-  2: '同花2张',
-  0: '普通点数'
+  13: '双鬼至尊',
+  12: '天公9',
+  11: '天公8',
+  10: '豹子',
+  9: '同花顺',
+  8: '同花3张',
+  7: '杂顺子',
+  6: '9点',
+  5: '8点',
+  4: '7点',
+  3: '6点',
+  2: '5点',
+  1: '4点',
+  0: '3点',
+  '-1': '2点',
+  '-2': '1点',
+  '-3': '同花2张',
+  '-4': '普通',
+  '-5': '零点'
 };
 
+// 赔率倍数（同花天公在判定时动态设置）
 const MULTIPLIERS = {
-  10: 10, // 双鬼
-  9: 1,   // 0点（赢双鬼时按10倍）
-  8: 6,   // 同花顺
-  7: 8,   // 豹子
-  6: 4,   // 杂顺子
-  5: 3,   // 同花3张
-  4: 2,   // 同花天公
-  3: 1,   // 天公
-  2: 2,   // 同花2张
-  0: 1    // 普通点数
+  13: 10,  // 双鬼
+  12: 1,   // 天公9（同花时2x）
+  11: 1,   // 天公8（同花时2x）
+  10: 8,   // 豹子
+  9: 6,    // 同花顺
+  8: 3,    // 同花3张
+  7: 4,    // 杂顺子
+  6: 1,    // 9点
+  5: 1,    // 8点
+  4: 1, 3: 1, 2: 1, 1: 1, 0: 1, '-1': 1, '-2': 1,
+  '-3': 2, // 同花2张
+  '-4': 1, // 普通
+  '-5': 1  // 零点（赢双鬼时10x）
 };
 
 function rankOrder(rank) {
@@ -45,21 +68,29 @@ function rankOrder(rank) {
   return parseInt(rank);
 }
 
-// K-A-2 也算顺子
 function isConsecutive(orders) {
   const sorted = [...orders].sort((a, b) => a - b);
   if (sorted[2] - sorted[1] === 1 && sorted[1] - sorted[0] === 1) return true;
-  if (sorted[0] === 1 && sorted[1] === 12 && sorted[2] === 13) return true; // Q-K-A
-  if (sorted[0] === 1 && sorted[1] === 2 && sorted[2] === 13) return true;  // K-A-2
+  if (sorted[0] === 1 && sorted[1] === 12 && sorted[2] === 13) return true;
+  if (sorted[0] === 1 && sorted[1] === 2 && sorted[2] === 13) return true;
   return false;
 }
 
 function getStraightHigh(orders) {
   const sorted = [...orders].sort((a, b) => a - b);
-  if (sorted[0] === 1 && sorted[1] === 12 && sorted[2] === 13) return 14; // Q-K-A
-  if (sorted[0] === 1 && sorted[1] === 2 && sorted[2] === 13) return 13;  // K-A-2
+  if (sorted[0] === 1 && sorted[1] === 12 && sorted[2] === 13) return 14;
+  if (sorted[0] === 1 && sorted[1] === 2 && sorted[2] === 13) return 13;
   return sorted[2];
 }
+
+// 3张点数对应牌型
+const POINTS_TO_TYPE = {
+  9: HAND_TYPES.POINTS_9, 8: HAND_TYPES.POINTS_8,
+  7: HAND_TYPES.POINTS_7, 6: HAND_TYPES.POINTS_6,
+  5: HAND_TYPES.POINTS_5, 4: HAND_TYPES.POINTS_4,
+  3: HAND_TYPES.POINTS_3, 2: HAND_TYPES.POINTS_2,
+  1: HAND_TYPES.POINTS_1
+};
 
 function evaluateThree(cards) {
   const orders = cards.map(c => rankOrder(c.rank));
@@ -69,62 +100,62 @@ function evaluateThree(cards) {
   const values = cards.map(c => c.value);
   const ranks = cards.map(c => c.rank);
   const allSameRank = ranks[0] === ranks[1] && ranks[1] === ranks[2];
+  const pts = values.reduce((s, v) => s + v, 0) % 10;
 
+  // 豹子（最高优先）
+  if (allSameRank) {
+    return { type: HAND_TYPES.THREE_KIND, high: values[0], points: 0 };
+  }
   // 同花顺
   if (allSameSuit && consecutive) {
     return { type: HAND_TYPES.STRAIGHT_FLUSH, high: getStraightHigh(orders), points: 0 };
   }
-  // 豹子
-  if (allSameRank) {
-    return { type: HAND_TYPES.THREE_KIND, high: values[0], points: 0 };
+  // 同花3张
+  if (allSameSuit) {
+    return { type: HAND_TYPES.SUIT_THREE, high: Math.max(...orders), points: pts };
   }
   // 杂顺子
   if (consecutive) {
     return { type: HAND_TYPES.MIXED_STRAIGHT, high: getStraightHigh(orders), points: 0 };
   }
-  // 同花3张（同花色但不是同花顺）
-  if (allSameSuit) {
-    const pts = values.reduce((s, v) => s + v, 0) % 10;
-    return { type: HAND_TYPES.SUIT_THREE, high: Math.max(...orders), points: pts };
-  }
   // 普通点数
-  const pts = values.reduce((s, v) => s + v, 0) % 10;
-  return { type: HAND_TYPES.NORMAL, high: 0, points: pts };
+  if (pts === 0) {
+    return { type: HAND_TYPES.ZERO_POINTS, high: 0, points: 0 };
+  }
+  return { type: POINTS_TO_TYPE[pts] || HAND_TYPES.POINTS_1, high: 0, points: pts };
 }
 
 function isWildCard(c) {
   return c.isJoker || c.isWild;
 }
 
-function nonJokers(cards) {
+function nonWilds(cards) {
   return cards.filter(c => !isWildCard(c));
 }
 
-const ALL_RANKS_FOR_WILD = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+const ALL_RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 const ALL_SUITS = ['hearts', 'diamonds', 'clubs', 'spades'];
 
-function bestWithJokers(cards) {
-  const jokers = cards.filter(c => isWildCard(c));
-  const normals = nonJokers(cards);
+function bestWithWilds(cards) {
+  const wilds = cards.filter(c => isWildCard(c));
+  const normals = nonWilds(cards);
 
-  if (jokers.length === 2) {
+  if (wilds.length === 2) {
     return { type: HAND_TYPES.DOUBLE_JOKER, high: 99, points: 0 };
   }
 
-  if (jokers.length === 1) {
-    let best = { type: HAND_TYPES.NORMAL, high: 0, points: 0 };
+  if (wilds.length === 1) {
+    let best = { type: HAND_TYPES.ZERO_POINTS, high: -99, points: 0 };
     for (const suit of ALL_SUITS) {
-      for (const rank of ALL_RANKS_FOR_WILD) {
-        const fakeJoker = {
+      for (const rank of ALL_RANKS) {
+        const fake = {
           suit, rank,
           value: rank === 'A' ? 1 : ['J', 'Q', 'K'].includes(rank) ? 10 : parseInt(rank),
-          isJoker: false
+          isJoker: false, isWild: false
         };
-        const combo = [...normals, fakeJoker];
-        const result = evaluateThree(combo);
+        const result = evaluateThree([...normals, fake]);
         if (result.type > best.type ||
-            (result.type === best.type && result.high > best.high) ||
-            (result.type === best.type && result.high === best.high && result.points > best.points)) {
+            (result.type === best.type && result.high > best.high)) {
           best = result;
         }
       }
@@ -135,108 +166,108 @@ function bestWithJokers(cards) {
   return evaluateThree(cards);
 }
 
-function evaluate(cards) {
-  const jokerCount = cards.filter(c => isWildCard(c)).length;
+function getMulti(playerType, cards) {
+  if (playerType === HAND_TYPES.DOUBLE_JOKER) return 10;
+  if (playerType === HAND_TYPES.ZERO_POINTS) return 1;
+  if (playerType === HAND_TYPES.TIANGONG_9 || playerType === HAND_TYPES.TIANGONG_8) {
+    // 同花天公2倍
+    if (cards.length === 2 && cards[0].suit === cards[1].suit) return 2;
+    return 1;
+  }
+  return MULTIPLIERS[playerType] || 1;
+}
 
-  // 双鬼（2张或3张都可能）— 包括两张野生牌
-  if (cards.length >= 2 && jokerCount >= 2) {
+function evaluate(cards) {
+  const wildCount = cards.filter(c => isWildCard(c)).length;
+
+  // 双鬼
+  if (cards.length >= 2 && wildCount >= 2) {
     return { type: HAND_TYPES.DOUBLE_JOKER, high: 99, points: 0 };
   }
 
   // 2张牌
   if (cards.length === 2) {
-    if (jokerCount > 0) {
-      // 单鬼/野生 + 1张普通牌 → 同花2张（百搭同花色）
-      const normal = cards.find(c => !isWildCard(c));
-      return { type: HAND_TYPES.SUIT_PAIR, high: rankOrder(normal.rank), points: normal.value % 10 };
+    if (wildCount > 0) {
+      // 单鬼/野生 + 普通 → 天公9（百搭凑9点）
+      return { type: HAND_TYPES.TIANGONG_9, high: 9, points: 9 };
     }
-    // 两张普通牌
     const pts = cards.reduce((s, c) => s + c.value, 0) % 10;
-    const sameSuit = cards[0].suit === cards[1].suit;
-    const isTianGong = pts === 9 || pts === 8;
-    // 同花天公：同花色 + 天公点数 → 2倍
-    if (sameSuit && isTianGong) {
-      return { type: HAND_TYPES.SUIT_TIANGONG, high: Math.max(rankOrder(cards[0].rank), rankOrder(cards[1].rank)), points: pts };
-    }
-    // 普通天公
-    if (isTianGong) {
-      return { type: HAND_TYPES.TIANGONG, high: 0, points: pts };
-    }
-    // 同花2张（同花色但非天公）
-    if (sameSuit) {
+    if (pts === 9) return { type: HAND_TYPES.TIANGONG_9, high: 9, points: 9 };
+    if (pts === 8) return { type: HAND_TYPES.TIANGONG_8, high: 8, points: 8 };
+    // 同花2张
+    if (cards[0].suit === cards[1].suit) {
       return { type: HAND_TYPES.SUIT_PAIR, high: Math.max(rankOrder(cards[0].rank), rankOrder(cards[1].rank)), points: pts };
     }
-    return { type: HAND_TYPES.NORMAL, high: 0, points: pts };
+    return { type: HAND_TYPES.NORMAL_2, high: 0, points: pts };
   }
 
   // 3张牌
   if (cards.length === 3) {
-    if (jokerCount > 0) {
-      return bestWithJokers(cards);
+    if (wildCount > 0) {
+      return bestWithWilds(cards);
     }
-    const result = evaluateThree(cards);
-    // 检查0点
-    if (result.type === HAND_TYPES.NORMAL && result.points === 0) {
-      return { type: HAND_TYPES.ZERO_POINTS, high: 0, points: 0 };
-    }
-    return result;
+    return evaluateThree(cards);
   }
 
-  return { type: HAND_TYPES.NORMAL, high: 0, points: 0 };
+  return { type: HAND_TYPES.NORMAL_2, high: 0, points: 0 };
 }
 
-// 返回 { result: 1|-1|0, multiplier: 赢家的倍率 }
-function compare(a, b) {
-  // 双鬼 vs 0点：0点赢
-  if (a.type === HAND_TYPES.DOUBLE_JOKER && b.type === HAND_TYPES.ZERO_POINTS) {
-    return { result: -1, multiplier: 10 };
-  }
-  if (b.type === HAND_TYPES.DOUBLE_JOKER && a.type === HAND_TYPES.ZERO_POINTS) {
+// 比较两手牌
+function compare(a, b, cardsA, cardsB) {
+  const multA = getMulti(a.type, cardsA || []);
+  const multB = getMulti(b.type, cardsB || []);
+
+  // 零点 vs 双鬼：零点赢，10倍
+  if (a.type === HAND_TYPES.ZERO_POINTS && b.type === HAND_TYPES.DOUBLE_JOKER) {
     return { result: 1, multiplier: 10 };
   }
-  // 双鬼 vs 其他：双鬼赢
-  if (a.type === HAND_TYPES.DOUBLE_JOKER && b.type !== HAND_TYPES.DOUBLE_JOKER) {
-    return { result: 1, multiplier: MULTIPLIERS[a.type] };
-  }
-  if (b.type === HAND_TYPES.DOUBLE_JOKER && a.type !== HAND_TYPES.DOUBLE_JOKER) {
-    return { result: -1, multiplier: MULTIPLIERS[b.type] };
+  if (b.type === HAND_TYPES.ZERO_POINTS && a.type === HAND_TYPES.DOUBLE_JOKER) {
+    return { result: -1, multiplier: 10 };
   }
 
-  // 不同类型，高者赢
+  // 不同类型
   if (a.type !== b.type) {
     const winner = a.type > b.type ? a : b;
-    return { result: a.type > b.type ? 1 : -1, multiplier: MULTIPLIERS[winner.type] };
+    const winnerMult = a.type > b.type ? multA : multB;
+    return { result: a.type > b.type ? 1 : -1, multiplier: winnerMult };
   }
 
-  // 同类型比较
+  // 同类型
   if (a.type === HAND_TYPES.DOUBLE_JOKER) return { result: 0, multiplier: 0 };
 
+  // 天公：同点数平局（不管同不同花）
+  if (a.type === HAND_TYPES.TIANGONG_9 || a.type === HAND_TYPES.TIANGONG_8) {
+    return { result: 0, multiplier: 0 };
+  }
+
+  // 豹子
+  if (a.type === HAND_TYPES.THREE_KIND) {
+    if (a.high !== b.high) return { result: a.high > b.high ? 1 : -1, multiplier: 8 };
+    return { result: 0, multiplier: 0 };
+  }
+
+  // 同花顺/顺子：比最大牌
   if (a.type === HAND_TYPES.STRAIGHT_FLUSH || a.type === HAND_TYPES.MIXED_STRAIGHT) {
     if (a.high !== b.high) return { result: a.high > b.high ? 1 : -1, multiplier: MULTIPLIERS[a.type] };
     return { result: 0, multiplier: 0 };
   }
-  if (a.type === HAND_TYPES.THREE_KIND) {
-    if (a.high !== b.high) return { result: a.high > b.high ? 1 : -1, multiplier: MULTIPLIERS[a.type] };
-    return { result: 0, multiplier: 0 };
-  }
+
+  // 同花3张
   if (a.type === HAND_TYPES.SUIT_THREE) {
-    if (a.points !== b.points) return { result: a.points > b.points ? 1 : -1, multiplier: MULTIPLIERS[a.type] };
-    if (a.high !== b.high) return { result: a.high > b.high ? 1 : -1, multiplier: MULTIPLIERS[a.type] };
+    if (a.points !== b.points) return { result: a.points > b.points ? 1 : -1, multiplier: 3 };
+    if (a.high !== b.high) return { result: a.high > b.high ? 1 : -1, multiplier: 3 };
     return { result: 0, multiplier: 0 };
   }
-  if (a.type === HAND_TYPES.SUIT_TIANGONG || a.type === HAND_TYPES.TIANGONG) {
-    if (a.points !== b.points) return { result: a.points > b.points ? 1 : -1, multiplier: MULTIPLIERS[a.type] };
-    if (a.high !== b.high) return { result: a.high > b.high ? 1 : -1, multiplier: MULTIPLIERS[a.type] };
-    return { result: 0, multiplier: 0 };
-  }
+
+  // 同花2张
   if (a.type === HAND_TYPES.SUIT_PAIR) {
-    if (a.points !== b.points) return { result: a.points > b.points ? 1 : -1, multiplier: MULTIPLIERS[a.type] };
-    if (a.high !== b.high) return { result: a.high > b.high ? 1 : -1, multiplier: MULTIPLIERS[a.type] };
+    if (a.points !== b.points) return { result: a.points > b.points ? 1 : -1, multiplier: 2 };
     return { result: 0, multiplier: 0 };
   }
-  // 普通/0点
-  if (a.points !== b.points) return { result: a.points > b.points ? 1 : -1, multiplier: MULTIPLIERS[a.type] };
+
+  // 普通点数（含补牌后9~1点、零点）
+  if (a.points !== b.points) return { result: a.points > b.points ? 1 : -1, multiplier: 1 };
   return { result: 0, multiplier: 0 };
 }
 
-module.exports = { HAND_TYPES, HAND_NAMES, MULTIPLIERS, evaluate, compare };
+module.exports = { HAND_TYPES, HAND_NAMES, MULTIPLIERS, evaluate, compare, getMulti };

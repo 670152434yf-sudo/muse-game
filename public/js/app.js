@@ -245,20 +245,16 @@
     if (state.state === 'choosing' && state.isYourTurn) {
       panel.classList.remove('hidden');
       const me = state.players.find(p => p.id === myId);
-      const jokerCount = me.cards.filter && me.cards.filter(c => c.isJoker).length;
-      if (jokerCount === 1) {
-        $('actionText').textContent = '单张鬼牌，必须补牌！';
-        $('btnHit').style.display = '';
-        $('btnStand').style.display = 'none';
-      } else if (jokerCount >= 2) {
+      const wildCount = me.cards.filter && me.cards.filter(c => c.isJoker || c.isWild).length;
+      if (wildCount >= 2) {
         $('actionText').textContent = '双鬼至尊！可不补（最大），或补一张：';
-        $('btnHit').style.display = '';
-        $('btnStand').style.display = '';
+      } else if (wildCount === 1) {
+        $('actionText').textContent = '你有鬼牌，可以补牌也可以不补：';
       } else {
         $('actionText').textContent = '请选择：';
-        $('btnHit').style.display = '';
-        $('btnStand').style.display = '';
       }
+      $('btnHit').style.display = '';
+      $('btnStand').style.display = '';
     } else {
       panel.classList.add('hidden');
     }
@@ -267,7 +263,7 @@
   // === 结果 ===
   const MULTIPLIER_NAMES = {
     10: '双鬼10x', 8: '豹子8x', 6: '同花顺6x', 4: '顺子4x',
-    3: '同花3张3x', 2: '同花2x', 1: '普通1x', 0: ''
+    3: '同花3张3x', 2: '同花2x', 1: '', 0: ''
   };
 
   function renderResults(state) {

@@ -12,11 +12,11 @@ const STATES = {
 
 // 可以上庄的最低牌型（顺子及以上）
 const QUALIFY_TO_BE_DEALER = [
-  HAND_TYPES.MIXED_STRAIGHT,
-  HAND_TYPES.SUIT_THREE,
-  HAND_TYPES.STRAIGHT_FLUSH,
-  HAND_TYPES.THREE_KIND,
-  HAND_TYPES.DOUBLE_JOKER
+  HAND_TYPES.MIXED_STRAIGHT,   // 杂顺子
+  HAND_TYPES.SUIT_THREE,       // 同花3张
+  HAND_TYPES.STRAIGHT_FLUSH,   // 同花顺
+  HAND_TYPES.THREE_KIND,       // 豹子
+  HAND_TYPES.DOUBLE_JOKER      // 双鬼
 ];
 
 class Room {
@@ -136,9 +136,8 @@ class Room {
   }
 
   _mustHit(cards) {
-    const wilds = cards.filter(c => c.isJoker || c.isWild);
-    if (wilds.length >= 2) return false; // 双鬼/双野生可以不补
-    if (wilds.length === 1) return true;  // 单张鬼/野生强制补牌
+    // 有鬼牌（大王/小王）或野生牌 → 可以选择不补
+    // 没有任何鬼/野生 → 不强制（玩家自己决定）
     return false;
   }
 
@@ -183,7 +182,7 @@ class Room {
       if (i === this.dealerIndex) continue;
       const player = this.players[i];
       const playerEval = evaluate(player.cards);
-      const cmp = compare(playerEval, dealerEval);
+      const cmp = compare(playerEval, dealerEval, player.cards, dealer.cards);
 
       let result, scoreChange;
       if (cmp.result > 0) {
@@ -289,13 +288,14 @@ class Room {
   }
 }
 
-function dealerPoints(eval) {
-  if (eval.type === 10) return '双鬼';
-  if (eval.type === 9) return '0点';
-  if (eval.type === 8 || eval.type === 6) return eval.high + '高';
-  if (eval.type === 7) return eval.high + '点';
-  if (eval.type === 5) return eval.points + '点';
-  return eval.points + '点';
+function dealerPoints(ev) {
+  if (ev.type === 13) return '双鬼';
+  if (ev.type === 12) return '天公9';
+  if (ev.type === 11) return '天公8';
+  if (ev.type === 10) return '豹子';
+  if (ev.type === 9 || ev.type === 7) return ev.high + '高';
+  if (ev.type === 8) return ev.points + '点';
+  return ev.points + '点';
 }
 
 module.exports = { Room, STATES };
