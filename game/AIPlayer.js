@@ -11,8 +11,8 @@ function aiDecide(cards, isDealer) {
     return false;
   }
 
-  // 同花2张 → 不补
-  if (eval2.type === HAND_TYPES.SUIT_PAIR) return false;
+  // 同花2张（含对子）→ 不补
+  if (cards.length === 2 && cards[0].suit === cards[1].suit) return false;
 
   // 有鬼/野生牌时，已有好牌就不补
   const hasWild = cards.some(c => c.isJoker || c.isWild);

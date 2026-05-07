@@ -1,5 +1,5 @@
 const { createDeck, shuffle, hasJokerOrWild, markWildCards, SUIT_SYMBOLS } = require('./Card');
-const { evaluate, compare, HAND_NAMES, MULTIPLIERS, HAND_TYPES } = require('./HandEvaluator');
+const { evaluate, compare, HAND_TYPES, HAND_NAMES, handDisplayName, getMultiplier } = require('./HandEvaluator');
 const { aiDecide } = require('./AIPlayer');
 
 const STATES = {
@@ -10,10 +10,9 @@ const STATES = {
   ROUND_END: 'round_end'
 };
 
-// 可以上庄的最低牌型（顺子及以上）
+// 可以上庄的最低牌型（杂顺子及以上）
 const QUALIFY_TO_BE_DEALER = [
   HAND_TYPES.MIXED_STRAIGHT,   // 杂顺子
-  HAND_TYPES.SUIT_THREE,       // 同花3张
   HAND_TYPES.STRAIGHT_FLUSH,   // 同花顺
   HAND_TYPES.THREE_KIND,       // 豹子
   HAND_TYPES.DOUBLE_JOKER      // 双鬼
@@ -212,15 +211,15 @@ class Room {
         playerId: player.id,
         playerName: player.name,
         playerCards: player.cards.map(c => ({ ...c })),
-        playerHandName: HAND_NAMES[playerEval.type],
+        playerHandName: handDisplayName(playerEval),
         playerPoints: playerEval.points,
         playerHandType: playerEval.type,
         result,
         scoreChange,
         multiplier: cmp.multiplier,
         dealerCards: dealer.cards.map(c => ({ ...c })),
-        dealerHandName: HAND_NAMES[dealerEval.type],
-        dealerPoints: dealerPoints(dealerEval),
+        dealerHandName: handDisplayName(dealerEval),
+        dealerPoints: dealerEval.points,
         dealerHandType: dealerEval.type
       });
     }
@@ -293,8 +292,8 @@ function dealerPoints(ev) {
   if (ev.type === 12) return '天公9';
   if (ev.type === 11) return '天公8';
   if (ev.type === 10) return '豹子';
-  if (ev.type === 9 || ev.type === 7) return ev.high + '高';
-  if (ev.type === 8) return ev.points + '点';
+  if (ev.type === 9) return ev.high + '高';
+  if (ev.type === 8) return ev.high + '高';
   return ev.points + '点';
 }
 

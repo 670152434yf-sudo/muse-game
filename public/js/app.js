@@ -262,8 +262,8 @@
 
   // === 结果 ===
   const MULTIPLIER_NAMES = {
-    10: '双鬼10x', 8: '豹子8x', 6: '同花顺6x', 4: '顺子4x',
-    3: '同花3张3x', 2: '同花2x', 1: '', 0: ''
+    10: '10x', 8: '8x', 6: '6x', 4: '4x',
+    3: '3x', 2: '2x', 1: '1x', 0: ''
   };
 
   function renderResults(state) {
@@ -274,7 +274,7 @@
     const dealer = state.players.find(p => p.isDealer);
     if (dealer && dealer.cards) {
       html += `<div style="text-align:center;margin-bottom:12px;opacity:0.7;font-size:0.85rem">
-        庄家 ${esc(dealer.name)}: ${getHandDisplay(state.roundResults[0]?.dealerHandName, state.roundResults[0]?.dealerPoints)}
+        庄家 ${esc(dealer.name)}: ${esc(state.roundResults[0]?.dealerHandName || '')}
       </div>`;
     }
 
@@ -298,7 +298,7 @@
     const oldDealerId = state.dealerIndex >= 0 && prevState?.players ? null : null;
     // 简单判断：如果结果中有赢且牌型是顺子以上，可能换庄了
     const qualWins = state.roundResults.filter(r =>
-      r.result === 'win' && r.playerHandType >= 6
+      r.result === 'win' && r.playerHandType >= 8
     );
     if (qualWins.length > 0) {
       const best = qualWins.reduce((a, b) => a.playerHandType > b.playerHandType ? a : b);
@@ -307,11 +307,6 @@
 
     panel.innerHTML = html;
     panel.classList.remove('hidden');
-  }
-
-  function getHandDisplay(name, points) {
-    if (!name) return '';
-    return name + (points !== undefined ? ' ' + points + '点' : '');
   }
 
   // === 倒计时 ===
