@@ -1,5 +1,5 @@
 const { createDeck, shuffle, hasJoker } = require('./Card');
-const { evaluate, compare, HAND_NAMES, MULTIPLIERS } = require('./HandEvaluator');
+const { evaluate, compare, HAND_NAMES, MULTIPLIERS, HAND_TYPES } = require('./HandEvaluator');
 const { aiDecide } = require('./AIPlayer');
 
 const STATES = {
@@ -9,6 +9,15 @@ const STATES = {
   COMPARING: 'comparing',
   ROUND_END: 'round_end'
 };
+
+// 可以上庄的最低牌型（顺子及以上）
+const QUALIFY_TO_BE_DEALER = [
+  HAND_TYPES.MIXED_STRAIGHT,
+  HAND_TYPES.SUIT_THREE,
+  HAND_TYPES.STRAIGHT_FLUSH,
+  HAND_TYPES.THREE_KIND,
+  HAND_TYPES.DOUBLE_JOKER
+];
 
 class Room {
   constructor(id) {
@@ -20,9 +29,12 @@ class Room {
     this.currentPlayerIndex = -1;
     this.roundResults = [];
     this.maxPlayers = 6;
-    this.scores = {};        // { playerId: 累计分数 }
+    this.scores = {};
     this.roundNumber = 0;
-    this.STAKE = 1;          // 每局基础筹码
+    this.STAKE = 1;
+    // 操作顺序：非庄家按座位顺序，庄家最后
+    this.turnOrder = [];
+    this.turnCursor = 0;
   }
 
   addPlayer(id, name, isAI = false) {
@@ -51,6 +63,18 @@ class Room {
     delete this.scores[id];
   }
 
+  // 构建操作顺序：非庄家按座位顺序在前，庄家最后
+  _buildTurnOrder() {
+    this.turnOrder = [];
+    for (let i = 0; i < this.players.length; i++) {
+      if (i !== this.dealerIndex) {
+        this.turnOrder.push(i);
+      }
+    }
+    this.turnOrder.push(this.dealerIndex);
+    this.turnCursor = 0;
+  }
+
   startGame() {
     if (this.players.length < 2) return false;
     if (this.state !== STATES.WAITING && this.state !== STATES.ROUND_END) return false;
@@ -67,6 +91,7 @@ class Room {
 
     this.players[this.dealerIndex].isDealer = true;
 
+    // 发2张底牌
     for (let i = 0; i < 2; i++) {
       for (const player of this.players) {
         player.cards.push(this.deck.pop());
@@ -74,15 +99,18 @@ class Room {
     }
 
     this.state = STATES.CHOOSING;
-    this.currentPlayerIndex = this._nextPlayerToAct(0);
+    this._buildTurnOrder();
+    this.currentPlayerIndex = this.turnOrder[0];
     return true;
   }
 
-  _nextPlayerToAct(fromIndex) {
-    for (let i = fromIndex; i < this.players.length; i++) {
-      if (this.players[i].choice === null) return i;
+  _advanceTurn() {
+    this.turnCursor++;
+    if (this.turnCursor >= this.turnOrder.length) {
+      this.currentPlayerIndex = -1;
+    } else {
+      this.currentPlayerIndex = this.turnOrder[this.turnCursor];
     }
-    return -1;
   }
 
   getCurrentPlayer() {
@@ -90,11 +118,10 @@ class Room {
     return this.players[this.currentPlayerIndex];
   }
 
-  // 单张鬼牌强制补牌，双鬼不强制
   _mustHit(cards) {
     const jokers = cards.filter(c => c.isJoker);
-    if (jokers.length >= 2) return false; // 双鬼可以不补
-    if (jokers.length === 1) return true; // 单鬼强制补牌
+    if (jokers.length >= 2) return false;
+    if (jokers.length === 1) return true;
     return false;
   }
 
@@ -117,7 +144,7 @@ class Room {
       }
     }
 
-    this.currentPlayerIndex = this._nextPlayerToAct(this.currentPlayerIndex + 1);
+    this._advanceTurn();
 
     if (this.currentPlayerIndex === -1) {
       this._compareHands();
@@ -132,6 +159,8 @@ class Room {
     const dealerEval = evaluate(dealer.cards);
 
     this.roundResults = [];
+    let newDealerId = null;
+    let newDealerHandType = -1;
 
     for (let i = 0; i < this.players.length; i++) {
       if (i === this.dealerIndex) continue;
@@ -155,6 +184,14 @@ class Room {
       this.scores[player.id] = (this.scores[player.id] || 0) + scoreChange;
       this.scores[dealer.id] = (this.scores[dealer.id] || 0) - scoreChange;
 
+      // 判断是否满足上庄条件：赢 + 顺子及以上牌型
+      if (result === 'win' && QUALIFY_TO_BE_DEALER.includes(playerEval.type)) {
+        if (playerEval.type > newDealerHandType) {
+          newDealerId = player.id;
+          newDealerHandType = playerEval.type;
+        }
+      }
+
       this.roundResults.push({
         playerId: player.id,
         playerName: player.name,
@@ -174,10 +211,17 @@ class Room {
 
     dealer.result = 'dealer';
     this.state = STATES.ROUND_END;
+
+    // 换庄
+    if (newDealerId) {
+      const newIdx = this.players.findIndex(p => p.id === newDealerId);
+      if (newIdx !== -1) {
+        this.dealerIndex = newIdx;
+      }
+    }
   }
 
   nextRound() {
-    this.dealerIndex = (this.dealerIndex + 1) % this.players.length;
     return this.startGame();
   }
 
