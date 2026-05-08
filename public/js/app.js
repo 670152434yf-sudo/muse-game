@@ -347,8 +347,39 @@
   $('btnLeave').onclick = () => {
     if (confirm('确定离开房间？')) {
       stopCountdown();
-      socket.emit('leaveRoom', {}, () => showScreen('lobby'));
+      showFinalScore();
     }
+  };
+
+  // === 最终结算弹窗 ===
+  function showFinalScore() {
+    if (!currentState || !currentState.scores) {
+      socket.emit('leaveRoom', {}, () => showScreen('lobby'));
+      return;
+    }
+    const list = $('finalScoreList');
+    list.innerHTML = '';
+    // 按分数从高到低排序
+    const sorted = Object.entries(currentState.scores)
+      .map(([id, score]) => {
+        const p = currentState.players.find(pl => pl.id === id);
+        return { name: p ? p.name : id, score };
+      })
+      .sort((a, b) => b.score - a.score);
+
+    sorted.forEach(item => {
+      const cls = item.score > 0 ? 'positive' : item.score < 0 ? 'negative' : 'zero';
+      const row = document.createElement('div');
+      row.className = 'final-score-row';
+      row.innerHTML = `<span class="fs-name">${esc(item.name)}</span><span class="fs-score ${cls}">${item.score > 0 ? '+' : ''}${item.score}</span>`;
+      list.appendChild(row);
+    });
+    $('finalScoreOverlay').classList.remove('hidden');
+  }
+
+  $('btnBackLobby').onclick = () => {
+    $('finalScoreOverlay').classList.add('hidden');
+    socket.emit('leaveRoom', {}, () => showScreen('lobby'));
   };
 
   // === Seat positions ===

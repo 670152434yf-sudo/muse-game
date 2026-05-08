@@ -152,7 +152,7 @@ body {
   background: rgba(0,0,0,0.35);
   padding: 7px 16px;
   border-radius: 12px;
-  font-size: 0.82rem;
+  font-size: 0.95rem;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -195,21 +195,21 @@ body {
   border: 1px solid rgba(255,215,0,0.25);
 }
 .reveal-card-area .card {
-  width: 40px;
-  height: 56px;
-  font-size: 0.72rem;
+  width: 48px;
+  height: 66px;
+  font-size: 0.8rem;
   box-shadow: 1px 2px 5px rgba(0,0,0,0.3);
 }
-.reveal-card-area .card .card-rank { font-size: 0.8rem; }
-.reveal-card-area .card .card-suit { font-size: 0.65rem; }
-.reveal-card-area .card .joker-text { font-size: 0.45rem; }
+.reveal-card-area .card .card-rank { font-size: 0.9rem; }
+.reveal-card-area .card .card-suit { font-size: 0.75rem; }
+.reveal-card-area .card .joker-text { font-size: 0.52rem; }
 .reveal-label {
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   opacity: 0.6;
   font-weight: 600;
 }
 .reveal-wild-text {
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   color: #ffd700;
   font-weight: 600;
 }
@@ -262,7 +262,7 @@ body {
   gap: 5px;
 }
 .seat .player-name {
-  font-size: 0.82rem;
+  font-size: 0.95rem;
   font-weight: 600;
   padding: 3px 12px;
   background: rgba(0,0,0,0.45);
@@ -291,7 +291,7 @@ body {
   50% { box-shadow: 0 0 20px rgba(255,215,0,0.6); }
 }
 .seat .player-status {
-  font-size: 0.72rem;
+  font-size: 0.85rem;
   opacity: 0.7;
   min-height: 1em;
 }
@@ -303,15 +303,15 @@ body {
 
 /* ========== 扑克牌 ========== */
 .card {
-  width: 54px;
-  height: 76px;
-  border-radius: 7px;
+  width: 64px;
+  height: 90px;
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 0.88rem;
+  font-size: 0.95rem;
   box-shadow: 2px 3px 8px rgba(0,0,0,0.35);
   user-select: none;
   position: relative;
@@ -332,13 +332,13 @@ body {
   font-size: 1.6rem;
   font-weight: 700;
 }
-.card .card-rank { font-size: 1rem; line-height: 1; }
-.card .card-suit { font-size: 0.82rem; line-height: 1; }
+.card .card-rank { font-size: 1.2rem; line-height: 1; }
+.card .card-suit { font-size: 0.95rem; line-height: 1; }
 .card.red { color: #d32f2f; }
 .card.black { color: #222; }
 .card.joker-big { color: #d32f2f; background: linear-gradient(145deg, #fff5f5, #ffe0e0); border-color: #f8bbd0; }
 .card.joker-small { color: #1a237e; background: linear-gradient(145deg, #f5f5ff, #e0e0ff); border-color: #90caf9; }
-.card .joker-text { font-size: 0.58rem; writing-mode: vertical-rl; font-weight: 800; }
+.card .joker-text { font-size: 0.7rem; writing-mode: vertical-rl; font-weight: 800; }
 
 /* 发牌动画 */
 .card.dealing {
@@ -512,6 +512,62 @@ body {
   font-size: 0.9rem;
 }
 
+/* ========== 最终结算弹窗 ========== */
+.final-score-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+.final-score-card {
+  background: linear-gradient(145deg, #1a3a1a, #0d1f0d);
+  border: 2px solid #ffd700;
+  border-radius: 18px;
+  padding: 30px 40px;
+  min-width: 300px;
+  max-width: 90vw;
+  text-align: center;
+  box-shadow: 0 0 60px rgba(255,215,0,0.2);
+  animation: popIn2 0.35s ease;
+}
+@keyframes popIn2 {
+  0% { transform: scale(0.85); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.final-score-card h2 {
+  color: #ffd700;
+  margin-bottom: 20px;
+  font-size: 1.3rem;
+}
+.final-score-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.final-score-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 10px;
+  font-size: 1.05rem;
+}
+.final-score-row .fs-name { font-weight: 600; }
+.final-score-row .fs-score { font-weight: 700; min-width: 50px; text-align: right; }
+.final-score-row .fs-score.positive { color: #69f0ae; }
+.final-score-row .fs-score.negative { color: #ff5252; }
+.final-score-row .fs-score.zero { color: #888; }
+
 /* ========== 倒计时 ========== */
 .countdown {
   position: fixed;
@@ -528,9 +584,9 @@ body {
 /* ========== 响应式 ========== */
 @media (max-width: 600px) {
   .lobby-container h1 { font-size: 3rem; }
-  .card { width: 44px; height: 62px; font-size: 0.75rem; }
-  .card .card-rank { font-size: 0.85rem; }
-  .card .card-suit { font-size: 0.68rem; }
+  .card { width: 50px; height: 70px; font-size: 0.8rem; }
+  .card .card-rank { font-size: 0.95rem; }
+  .card .card-suit { font-size: 0.78rem; }
   .game-table { border-radius: 50px; min-height: 380px; }
   .result-panel { min-width: 280px; padding: 18px 22px; }
   .score-board { gap: 6px; }
