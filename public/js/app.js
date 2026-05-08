@@ -273,13 +273,22 @@
     const dealer = state.players.find(p => p.isDealer);
 
     state.roundResults.forEach(r => {
-      const cls = r.result === 'win' ? 'win' : r.result === 'lose' ? 'lose' : 'draw';
-      const txt = r.result === 'win' ? '赢' : r.result === 'lose' ? '输' : '平';
       const pMult = MULTIPLIER_NAMES[r.multiplier] || '';
-      const dMult = MULTIPLIER_NAMES[r.multiplier] || '';
       const sCls = r.scoreChange > 0 ? 'positive' : r.scoreChange < 0 ? 'negative' : 'zero';
       const pScore = r.scoreChange > 0 ? '+' + r.scoreChange : String(r.scoreChange);
       const dScore = r.scoreChange > 0 ? '-' + r.scoreChange : r.scoreChange < 0 ? '+' + Math.abs(r.scoreChange) : '0';
+
+      let resultLabel, resultCls;
+      if (r.result === 'win') {
+        resultLabel = `${esc(r.playerName)}赢`;
+        resultCls = 'player-win';
+      } else if (r.result === 'lose') {
+        resultLabel = `${esc(dealer?.name || '庄家')}赢`;
+        resultCls = 'dealer-win';
+      } else {
+        resultLabel = '平局';
+        resultCls = 'draw';
+      }
 
       html += `<div class="result-matchup">
         <div class="matchup-header">
@@ -289,9 +298,9 @@
         </div>
         <table class="matchup-table">
           <tr>
-            <td class="mt-hand ${cls}">${r.playerHandName} ${pMult}</td>
+            <td class="mt-hand">${r.playerHandName} ${pMult}</td>
             <td class="mt-label">牌型</td>
-            <td class="mt-hand">${r.dealerHandName} ${dMult}</td>
+            <td class="mt-hand">${r.dealerHandName} ${pMult}</td>
           </tr>
           <tr>
             <td class="mt-score ${sCls}">${pScore}</td>
@@ -299,7 +308,7 @@
             <td class="mt-score ${r.result === 'win' ? 'negative' : r.result === 'lose' ? 'positive' : 'zero'}">${dScore}</td>
           </tr>
         </table>
-        <div class="matchup-result ${cls}">${txt}</div>
+        <div class="matchup-result ${resultCls}">${resultLabel}</div>
       </div>`;
     });
 
