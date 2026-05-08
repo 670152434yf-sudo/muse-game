@@ -131,9 +131,11 @@ function bestWithWilds(cards) {
   if (wilds.length === 2) return { type: HAND_TYPES.DOUBLE_JOKER, high: 99, points: 0 };
 
   // 1张鬼：尝试凑特殊牌型（豹子、同花顺、杂顺子）
+  // 鬼只能用非鬼牌已有的花色，不能凭空造同花
   if (wilds.length === 1) {
+    const existingSuits = [...new Set(normals.map(c => c.suit))];
     let best = null;
-    for (const suit of ALL_SUITS) {
+    for (const suit of existingSuits) {
       for (const rank of ALL_RANKS) {
         const fake = {
           suit, rank,
@@ -200,25 +202,14 @@ function compare(a, b, cardsA, cardsB) {
     return { result: a.type > b.type ? 1 : -1, multiplier: wMult };
   }
 
-  // 同类比较
-  if (a.type === HAND_TYPES.DOUBLE_JOKER) return { result: 0, multiplier: 0 };
-
-  // 天公：同点数平局
-  if (a.type === HAND_TYPES.TIANGONG_9 || a.type === HAND_TYPES.TIANGONG_8) {
+  // 同类比较 → 特殊牌型平局，点数类比点数
+  if (a.type === HAND_TYPES.POINT_BASED) {
+    if (a.points !== b.points) {
+      return { result: a.points > b.points ? 1 : -1, multiplier: a.points > b.points ? multA : multB };
+    }
     return { result: 0, multiplier: 0 };
   }
-
-  // 豹子
-  if (a.type === HAND_TYPES.THREE_KIND) {
-    if (a.high !== b.high) return { result: a.high > b.high ? 1 : -1, multiplier: 8 };
-    return { result: 0, multiplier: 0 };
-  }
-
-  // 同花顺/杂顺子：比最大牌
-  if (a.type === HAND_TYPES.STRAIGHT_FLUSH || a.type === HAND_TYPES.MIXED_STRAIGHT) {
-    if (a.high !== b.high) return { result: a.high > b.high ? 1 : -1, multiplier: a.type === HAND_TYPES.STRAIGHT_FLUSH ? 6 : 4 };
-    return { result: 0, multiplier: 0 };
-  }
+  return { result: 0, multiplier: 0 };
 
   // 点数类：纯比点数
   if (a.points !== b.points) return { result: a.points > b.points ? 1 : -1, multiplier: a.points > b.points ? multA : multB };
