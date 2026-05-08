@@ -441,48 +441,65 @@ body {
   font-size: 1.25rem;
   letter-spacing: 0.05em;
 }
-.result-item {
+/* 对战表格 */
+.result-matchup {
+  margin-bottom: 16px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.result-matchup:last-of-type { margin-bottom: 8px; }
+.matchup-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 11px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  gap: 10px;
-}
-.result-item:last-child { border-bottom: none; }
-.result-item .result-name { font-weight: 600; min-width: 55px; }
-.result-item .result-hand {
-  font-size: 0.82rem;
-  opacity: 0.75;
-  flex: 1;
-  text-align: center;
-}
-.result-item .result-multiplier {
-  font-size: 0.72rem;
-  opacity: 0.6;
-  min-width: 42px;
-  text-align: center;
-}
-.result-item .result-outcome {
-  font-weight: 700;
-  padding: 3px 12px;
-  border-radius: 6px;
-  min-width: 40px;
-  text-align: center;
+  margin-bottom: 10px;
   font-size: 0.85rem;
 }
-.result-outcome.win { background: #2e7d32; color: #fff; }
-.result-outcome.lose { background: #c62828; color: #fff; }
-.result-outcome.draw { background: #e65100; color: #fff; }
-.result-item .result-score {
-  font-weight: 700;
-  min-width: 48px;
-  text-align: right;
-  font-size: 0.95rem;
+.mh-player { font-weight: 600; color: #69f0ae; }
+.mh-vs { opacity: 0.4; font-size: 0.75rem; }
+.mh-dealer { font-weight: 600; color: #ffd700; }
+.matchup-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
 }
-.result-score.positive { color: #69f0ae; }
-.result-score.negative { color: #ff5252; }
-.result-score.zero { color: #888; }
+.matchup-table td {
+  padding: 6px 8px;
+  vertical-align: middle;
+}
+.matchup-table .mt-label {
+  width: 48px;
+  opacity: 0.35;
+  font-size: 0.7rem;
+  border-left: 1px solid rgba(255,255,255,0.08);
+  border-right: 1px solid rgba(255,255,255,0.08);
+}
+.matchup-table .mt-hand {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+.matchup-table .mt-score {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.matchup-table .mt-hand.win { color: #69f0ae; }
+.matchup-table .mt-hand.lose { color: #ff5252; }
+.matchup-table .mt-hand.draw { color: #ffa726; }
+.matchup-table .mt-score.positive { color: #69f0ae; }
+.matchup-table .mt-score.negative { color: #ff5252; }
+.matchup-table .mt-score.zero { color: #888; }
+.matchup-result {
+  text-align: center;
+  margin-top: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 3px 0;
+  border-radius: 6px;
+}
+.matchup-result.win { background: rgba(46,125,50,0.25); color: #69f0ae; }
+.matchup-result.lose { background: rgba(198,40,40,0.25); color: #ff5252; }
+.matchup-result.draw { background: rgba(230,81,0,0.25); color: #ffa726; }
 
 /* 换庄提示 */
 .dealer-change-banner {

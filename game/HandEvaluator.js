@@ -27,12 +27,14 @@ function handDisplayName(result) {
   return HAND_NAMES[result.type] || '';
 }
 
-// 倍率：根据手牌内容动态计算
+// 倍率：根据手牌内容动态计算（鬼牌视为任意花色的0，可匹配同花）
 function getMultiplier(type, points, cards) {
   if (type === HAND_TYPES.DOUBLE_JOKER) return 10;
   if (type === HAND_TYPES.TIANGONG_9 || type === HAND_TYPES.TIANGONG_8) {
-    // 同花天公或对子 → 2倍
     if (cards.length === 2) {
+      // 鬼牌视为任意花色 → 有鬼即同花
+      const hasWild = cards.some(c => isWildCard(c));
+      if (hasWild) return 2;
       if (cards[0].suit === cards[1].suit) return 2;
       if (cards[0].rank === cards[1].rank) return 2;
     }
@@ -44,11 +46,22 @@ function getMultiplier(type, points, cards) {
 
   // 点数类：看同花情况
   if (cards.length === 3) {
+    const normals = cards.filter(c => !isWildCard(c));
+    const wildCount = cards.length - normals.length;
+    if (wildCount > 0) {
+      // 有鬼牌：鬼可匹配任意花色，只需非鬼牌同花
+      const normalSuits = [...new Set(normals.map(c => c.suit))];
+      // 非鬼牌同花 → 鬼也跟同花 → 同花3张
+      if (normalSuits.length <= 1) return 3;
+      return 1;
+    }
     const allSameSuit = cards.every(c => c.suit === cards[0].suit);
     return allSameSuit ? 3 : 1;
   }
   if (cards.length === 2) {
-    // 同花或对子 → 2x
+    // 有鬼牌 → 鬼匹配另一张的花色 → 同花2张
+    const hasWild = cards.some(c => isWildCard(c));
+    if (hasWild) return 2;
     if (cards[0].suit === cards[1].suit) return 2;
     if (cards[0].rank === cards[1].rank) return 2;
     return 1;
@@ -99,6 +112,11 @@ function evaluateThree(cards) {
   return { type: HAND_TYPES.POINT_BASED, high: 0, points: pts };
 }
 
+// 判断是否为特殊牌型（豹子、同花顺、杂顺子）
+function isSpecialHand(result) {
+  return result.type >= HAND_TYPES.MIXED_STRAIGHT && result.type !== HAND_TYPES.POINT_BASED;
+}
+
 function isWildCard(c) { return c.isJoker || c.isWild; }
 function nonWilds(cards) { return cards.filter(c => !isWildCard(c)); }
 
@@ -109,10 +127,12 @@ function bestWithWilds(cards) {
   const wilds = cards.filter(c => isWildCard(c));
   const normals = nonWilds(cards);
 
+  // 2张鬼 → 双鬼
   if (wilds.length === 2) return { type: HAND_TYPES.DOUBLE_JOKER, high: 99, points: 0 };
 
+  // 1张鬼：尝试凑特殊牌型（豹子、同花顺、杂顺子）
   if (wilds.length === 1) {
-    let best = { type: HAND_TYPES.POINT_BASED, high: -99, points: 0 };
+    let best = null;
     for (const suit of ALL_SUITS) {
       for (const rank of ALL_RANKS) {
         const fake = {
@@ -121,13 +141,16 @@ function bestWithWilds(cards) {
           isJoker: false, isWild: false
         };
         const result = evaluateThree([...normals, fake]);
-        // 豹子/同花顺/顺子优先；否则比点数
-        if (result.type > best.type || (result.type === best.type && result.points > best.points)) {
-          best = result;
+        if (isSpecialHand(result)) {
+          if (!best || result.type > best.type || (result.type === best.type && result.high > best.high)) {
+            best = result;
+          }
         }
       }
     }
-    return best;
+    // 找到特殊牌型就用，否则按0点算
+    if (best) return best;
+    return evaluateThree(normals.map(c => ({ ...c })));
   }
 
   return evaluateThree(cards);
@@ -136,21 +159,16 @@ function bestWithWilds(cards) {
 function evaluate(cards) {
   const wildCount = cards.filter(c => isWildCard(c)).length;
 
-  // 双鬼
+  // 双鬼（2张或以上含2张鬼）
   if (cards.length >= 2 && wildCount >= 2) {
     return { type: HAND_TYPES.DOUBLE_JOKER, high: 99, points: 0 };
   }
 
-  // 2张牌
+  // 2张牌：鬼=任意花色的0点
   if (cards.length === 2) {
-    if (wildCount > 0) {
-      // 单鬼/野生 + 普通 → 天公9（百搭凑9）
-      return { type: HAND_TYPES.TIANGONG_9, high: 9, points: 9 };
-    }
     const pts = cards.reduce((s, c) => s + c.value, 0) % 10;
     if (pts === 9) return { type: HAND_TYPES.TIANGONG_9, high: 9, points: 9 };
     if (pts === 8) return { type: HAND_TYPES.TIANGONG_8, high: 8, points: 8 };
-    // 充点数
     return { type: HAND_TYPES.POINT_BASED, high: 0, points: pts };
   }
 

@@ -249,7 +249,7 @@
       if (wildCount >= 2) {
         $('actionText').textContent = '双鬼至尊！可不补（最大），或补一张：';
       } else if (wildCount === 1) {
-        $('actionText').textContent = '你有鬼牌，可以补牌也可以不补：';
+        $('actionText').textContent = '鬼牌两张时算0点，补第三张后可变任意牌凑特殊牌型：';
       } else {
         $('actionText').textContent = '请选择：';
       }
@@ -270,33 +270,40 @@
     const panel = $('resultPanel');
     let html = '<h3>第' + state.roundNumber + '轮 结算</h3>';
 
-    // 庄家牌
     const dealer = state.players.find(p => p.isDealer);
-    if (dealer && dealer.cards) {
-      html += `<div style="text-align:center;margin-bottom:12px;opacity:0.7;font-size:0.85rem">
-        庄家 ${esc(dealer.name)}: ${esc(state.roundResults[0]?.dealerHandName || '')}
-      </div>`;
-    }
 
     state.roundResults.forEach(r => {
       const cls = r.result === 'win' ? 'win' : r.result === 'lose' ? 'lose' : 'draw';
       const txt = r.result === 'win' ? '赢' : r.result === 'lose' ? '输' : '平';
+      const pMult = MULTIPLIER_NAMES[r.multiplier] || '';
+      const dMult = MULTIPLIER_NAMES[r.multiplier] || '';
       const sCls = r.scoreChange > 0 ? 'positive' : r.scoreChange < 0 ? 'negative' : 'zero';
-      const sTxt = r.scoreChange > 0 ? '+' + r.scoreChange : String(r.scoreChange);
-      const mTxt = MULTIPLIER_NAMES[r.multiplier] || '';
-      html += `<div class="result-item">
-        <span class="result-name">${esc(r.playerName)}</span>
-        <span class="result-hand">${r.playerHandName}</span>
-        <span class="result-multiplier">${mTxt}</span>
-        <span class="result-outcome ${cls}">${txt}</span>
-        <span class="result-score ${sCls}">${sTxt}</span>
+      const pScore = r.scoreChange > 0 ? '+' + r.scoreChange : String(r.scoreChange);
+      const dScore = r.scoreChange > 0 ? '-' + r.scoreChange : r.scoreChange < 0 ? '+' + Math.abs(r.scoreChange) : '0';
+
+      html += `<div class="result-matchup">
+        <div class="matchup-header">
+          <span class="mh-player">${esc(r.playerName)} (闲)</span>
+          <span class="mh-vs">VS</span>
+          <span class="mh-dealer">${esc(dealer?.name || '')} (庄)</span>
+        </div>
+        <table class="matchup-table">
+          <tr>
+            <td class="mt-hand ${cls}">${r.playerHandName} ${pMult}</td>
+            <td class="mt-label">牌型</td>
+            <td class="mt-hand">${r.dealerHandName} ${dMult}</td>
+          </tr>
+          <tr>
+            <td class="mt-score ${sCls}">${pScore}</td>
+            <td class="mt-label">得分</td>
+            <td class="mt-score ${r.result === 'win' ? 'negative' : r.result === 'lose' ? 'positive' : 'zero'}">${dScore}</td>
+          </tr>
+        </table>
+        <div class="matchup-result ${cls}">${txt}</div>
       </div>`;
     });
 
     // 换庄提示
-    const newDealer = state.players.find(p => p.isDealer);
-    const oldDealerId = state.dealerIndex >= 0 && prevState?.players ? null : null;
-    // 简单判断：如果结果中有赢且牌型是顺子以上，可能换庄了
     const qualWins = state.roundResults.filter(r =>
       r.result === 'win' && r.playerHandType >= 8
     );
