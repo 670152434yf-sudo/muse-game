@@ -228,9 +228,11 @@ class Room {
     this.state = STATES.ROUND_END;
 
     // 换庄
+    this.prevDealerId = null;
     if (newDealerId) {
       const newIdx = this.players.findIndex(p => p.id === newDealerId);
       if (newIdx !== -1) {
+        this.prevDealerId = dealer.id;
         this.dealerIndex = newIdx;
       }
     }
@@ -278,6 +280,7 @@ class Room {
       currentPlayerId: this.currentPlayerIndex >= 0 ? this.players[this.currentPlayerIndex].id : null,
       roundResults: this.roundResults,
       dealerIndex: this.dealerIndex,
+      prevDealerId: this.prevDealerId || null,
       isYourTurn: this.currentPlayerIndex >= 0 && this.players[this.currentPlayerIndex].id === playerId,
       scores: { ...this.scores },
       revealCard: this.revealCard ? { ...this.revealCard } : null,

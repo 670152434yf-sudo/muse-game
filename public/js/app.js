@@ -304,12 +304,15 @@
     });
 
     // 换庄提示
-    const qualWins = state.roundResults.filter(r =>
-      r.result === 'win' && r.playerHandType >= 8
-    );
-    if (qualWins.length > 0) {
-      const best = qualWins.reduce((a, b) => a.playerHandType > b.playerHandType ? a : b);
-      html += `<div class="dealer-change-banner">🎉 ${esc(best.playerName)} 以${best.playerHandName}上庄！</div>`;
+    if (state.prevDealerId) {
+      const newDealer = state.players.find(p => p.isDealer);
+      const qualWins = state.roundResults.filter(r =>
+        r.result === 'win' && r.playerHandType >= 8
+      );
+      if (qualWins.length > 0 && newDealer) {
+        const best = qualWins.reduce((a, b) => a.playerHandType > b.playerHandType ? a : b);
+        html += `<div class="dealer-change-banner">🎉 ${esc(best.playerName)} 以${best.playerHandName}上庄！</div>`;
+      }
     }
 
     panel.innerHTML = html;
