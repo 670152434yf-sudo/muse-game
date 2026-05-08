@@ -325,14 +325,14 @@
     let sec = 6;
     const el = $('countdown');
     el.classList.remove('hidden');
-    el.textContent = sec + '秒后返回大厅...';
+    el.textContent = sec + '秒后自动开始下一轮...';
     countdownTimer = setInterval(() => {
       sec--;
       if (sec <= 0) {
         stopCountdown();
-        socket.emit('leaveRoom', {}, () => showScreen('lobby'));
+        socket.emit('nextRound', {}, ({ error }) => { if (error) console.error(error); });
       } else {
-        el.textContent = sec + '秒后返回大厅...';
+        el.textContent = sec + '秒后自动开始下一轮...';
       }
     }, 1000);
   }
