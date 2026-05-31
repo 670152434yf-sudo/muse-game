@@ -127,8 +127,10 @@ function bestWithWilds(cards) {
   const wilds = cards.filter(c => isWildCard(c));
   const normals = nonWilds(cards);
 
-  // 2张鬼 → 双鬼
-  if (wilds.length === 2) return { type: HAND_TYPES.DOUBLE_JOKER, high: 99, points: 0 };
+  // 2张鬼+1张普通牌 → 两张鬼都变成普通牌的rank = 豹子
+  if (wilds.length === 2 && normals.length === 1) {
+    return { type: HAND_TYPES.THREE_KIND, high: normals[0].value, points: 0 };
+  }
 
   // 1张鬼：尝试凑特殊牌型（豹子、同花顺、杂顺子）
   // 鬼只能用非鬼牌已有的花色，不能凭空造同花
@@ -161,8 +163,8 @@ function bestWithWilds(cards) {
 function evaluate(cards) {
   const wildCount = cards.filter(c => isWildCard(c)).length;
 
-  // 双鬼（2张或以上含2张鬼）
-  if (cards.length >= 2 && wildCount >= 2) {
+  // 双鬼（仅限2张手牌都是鬼）
+  if (cards.length === 2 && wildCount >= 2) {
     return { type: HAND_TYPES.DOUBLE_JOKER, high: 99, points: 0 };
   }
 
